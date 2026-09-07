@@ -11,14 +11,16 @@
   toda la app (SyntaxError) y la calculadora deja de responder.
   ═══════════════════════════════════════════════════════════════════
   CAMBIOS DE ESTA VERSIÓN:
-  1 · En la bóveda, los iconos ⚙ Ajustes, ? Ayuda y 🔒 Bloquear están
-      SIEMPRE visibles (en modo discreto solo se oculta 🔓 Desencriptador).
-  2 · Primera nota: el Desencriptador YA NO se ejecuta solo. Pide la
-      clave (OBLIGATORIA, se eliminó lo de "alternativa opcional") y
-      avisa de que la próxima vez habrá que mantener 🗑️ 5 s.
-  3 · Al hacer clic en cualquier nota sale SIEMPRE la pantalla negra
-      con «Copiar» y «Eliminar»; la frase «mantén eliminar 5 s · te
-      pedirá tu código» solo aparece LA PRIMERA VEZ.
+  1 · Sin toast "Firebase conectado" al iniciar.
+  2 · La pantalla de rescate ahora se llama RESET: etiqueta «reset»,
+      botón amarillo «eliminar» y SIN botón rojo de destrucción.
+  3 · Mantener 🗑️ 5 s abre SIEMPRE el Desencriptador COMPLETO
+      (pipeline de 5 pasos + clave obligatoria). Adiós al mini-modal.
+  4 · «Rotar clave» → «Cambiar clave» / botón «Cambiar y recifrar».
+  5 · Backup exportado = «basemask-<día actual>.txt».
+  6 · «Código de rescate» → «Código de RESET» en toda la interfaz.
+  7 · Especificaciones: fuera «Cloud», dentro «Último backup»
+      (fecha/hora, o «Nunca» en rojo si nunca se hizo).
   ═══════════════════════════════════════════════════════════════════
 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/sora/400.css"/>
@@ -43,7 +45,6 @@ body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;bac
 @keyframes floaty{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-22px) rotate(5deg)}}
 
 body.onboarded .calc-tag,body.onboarded .calc-foot,body.onboarded .caption{display:none}
-/* modo discreto: solo se oculta el acceso directo al desencriptador y la chapa AES */
 body.clean .aes{display:none}
 body.clean #btnDecoder{display:none}
 
@@ -168,11 +169,8 @@ body[data-screen="vault"] .screen-calc{transform:translateY(-10%) scale(.985);op
 .hold-hint{margin:12px 0 2px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#7d8494;letter-spacing:.4px}
 
 .codebox{font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.75;word-break:break-all;max-height:225px;overflow-y:auto;background:#0c0e12;border:1px solid rgba(139,227,155,.18);border-radius:13px;padding:14px;color:#8be39b}
-.pin-input{width:100%;background:#0c0e12;border:1.5px solid #3a3f4a;border-radius:12px;padding:12px;color:#e6e8ee;font-family:'JetBrains Mono',monospace;letter-spacing:6px;text-align:center;font-size:20px;outline:none;transition:.15s}
-.pin-input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,166,35,.18)}
-.pin-err{margin:10px 0;font-size:12px;font-weight:600;min-height:16px;text-align:center;color:#ff8a8a}
 
-/* ---------- RESCATE ---------- */
+/* ---------- RESET (antes "rescate") ---------- */
 .modal.rescue{background:rgba(0,0,0,.97);backdrop-filter:none;padding:0}
 .rescue-box{width:min(272px,88vw);background:#0a0a0a;border:1px solid #1b1b1b;border-radius:14px;padding:16px 14px;text-align:center}
 .rescue-box.shake{animation:shake .4s ease}
@@ -186,9 +184,6 @@ body[data-screen="vault"] .screen-calc{transform:translateY(-10%) scale(.985);op
 .rescue-btn.primary{color:#7a5c26;border-color:#2e2412}
 .rescue-btn:disabled{opacity:.35}
 .rescue-btn:hover{filter:brightness(1.5)}
-.rescue-wipe{margin-top:12px;width:100%;background:#150808;border:1px solid #331111;color:#6b2020;border-radius:10px;padding:9px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;touch-action:manipulation;transition:.15s}
-.rescue-wipe:hover{filter:brightness(1.7);border-color:#4a1a1a}
-.rescue-wipe:active{transform:scale(.97)}
 .rescue-confirm p{color:#565656;font-size:11.5px;line-height:1.7;font-family:'JetBrains Mono',monospace}
 .rescue-confirm p b{color:#7a5c26}
 .rescue-confirm .wipe-warn{color:#7a2626;font-weight:700}
@@ -198,7 +193,6 @@ body[data-screen="vault"] .screen-calc{transform:translateY(-10%) scale(.985);op
 .rc-explain b{color:#e9c98a}
 .rc-explain .no{color:#ff9c9c}
 
-/* aviso del desencriptador (primera vez) */
 .d-notice{background:rgba(232,89,12,.07);border:1px solid rgba(232,89,12,.28);border-radius:12px;padding:10px 12px;font-size:11.5px;line-height:1.65;color:#8a5a2a;margin-bottom:12px}
 .d-notice b{color:#b3520f}
 
@@ -213,4 +207,1149 @@ body[data-screen="vault"] .screen-calc{transform:translateY(-10%) scale(.985);op
 .pstep{display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;text-align:center}
 .pstep:not(:first-child)::before{content:'';position:absolute;top:15px;right:calc(50% + 18px);width:calc(100% - 36px);height:2px;background:#e4dcc6;z-index:0;transition:background .3s}
 .pstep.ok:not(:first-child)::before{background:#7fae6a}
-.pdot{width:32px;height:32px;border-radius:50%;border:2px solid #d8cfb8;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#8a8474;display:flex;align-items:center;justify-content:center;position:relative;z-index
+.pdot{width:32px;height:32px;border-radius:50%;border:2px solid #d8cfb8;background:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:#8a8474;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;transition:.25s}
+.pstep.active .pdot{border-color:var(--amber);color:#b3720f;animation:pulseDot .9s infinite}
+@keyframes pulseDot{0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,.4)}50%{box-shadow:0 0 0 6px rgba(245,166,35,0)}}
+.pstep.ok .pdot{background:var(--ok);border-color:var(--ok);color:#dff2cf}
+.pstep.fail .pdot{background:var(--bad);border-color:var(--bad);color:#ffd9d9;animation:shake .4s}
+.plabel{font-size:9px;font-weight:700;letter-spacing:.8px;color:#6d6759}
+.pcap{font-family:'JetBrains Mono',monospace;font-size:8.5px;color:#a79e86;min-height:11px;word-break:break-all;max-width:100%}
+
+.dec-res{margin-top:14px}
+.dec-err{background:rgba(224,82,82,.1);border:1px solid rgba(224,82,82,.3);color:#b03a3a;border-radius:11px;padding:12px;font-size:12.5px;line-height:1.6}
+.dec-ok{border:1.5px solid #d8e6c8;background:#fdfff8;border-radius:14px;padding:16px;animation:pop .35s ease}
+.dec-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:#55684a;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:6px}
+.dec-meta span{background:#eef4e4;border-radius:99px;padding:3px 9px}
+.dec-meta span.cipher{background:var(--ok);color:#e6f2d8}
+.dec-title{font-size:16px;font-weight:800;color:#23301a;margin-bottom:8px}
+.dec-text{font-size:14px;line-height:1.7;color:#2b3324;word-break:break-word}
+.dec-text a{color:#b3720f;font-weight:600}
+.dec-img{max-width:100%;border-radius:12px;margin-top:10px;border:1px solid #dce4cd}
+.dec-audio{width:100%;margin-top:10px}
+.dec-links{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.dec-links a{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#2f6b2f;word-break:break-all}
+
+.spec{border:1.5px solid #e2d9c4;border-radius:14px;overflow:hidden;margin-bottom:16px}
+.spec-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 13px;background:#fffdf8;font-size:11.5px;color:#6d6759}
+.spec-row+.spec-row{border-top:1px dashed #e4dcc6}
+.spec-row b{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#3d4a30;font-weight:700;text-align:right}
+.spec-row b.never{color:#b03a3a}
+.set-h{font-size:13.5px;font-weight:800;margin:4px 0 4px;color:#241f15}
+.set-p{font-size:11.5px;color:#8a8474;line-height:1.6;margin-bottom:12px}
+.set-msg{margin-top:10px;font-size:12px;font-weight:600;min-height:15px;text-align:center}
+.set-msg.ok{color:#3d7a3d}
+.set-msg.err{color:#b03a3a}
+
+.help-list{list-style:none;display:flex;flex-direction:column;gap:11px;font-size:13px;line-height:1.6;color:#4c463a}
+.help-list li{display:flex;gap:10px}
+.help-list .ico{flex-shrink:0;width:30px;height:30px;border-radius:9px;background:#fdf2cf;display:flex;align-items:center;justify-content:center;font-size:15px}
+.help-list code{font-family:'JetBrains Mono',monospace;font-size:10.5px;background:#eee7d5;padding:1px 6px;border-radius:6px}
+
+#toasts{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;max-width:92vw}
+.toast{background:#1c1f26;color:#f2f1ec;border:1px solid rgba(255,255,255,.12);padding:10px 18px;border-radius:12px;font-size:12.5px;font-weight:600;box-shadow:0 14px 30px -10px rgba(0,0,0,.6);animation:rise .35s cubic-bezier(.2,1.2,.35,1);text-align:center;max-width:92vw}
+.toast.out{opacity:0;transform:translateY(8px);transition:.4s}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.94)}to{opacity:1;transform:none}}
+
+@media (max-width:520px){
+  .stage{padding:0;gap:0;min-height:100vh;min-height:100dvh}
+  .caption{display:none}
+  .bgfx{display:none}
+  .device{width:100%;height:100vh;height:100dvh;border-radius:0;border:none;box-shadow:none}
+  .key{height:13vw;max-height:72px;border-radius:14px;font-size:22px}
+  .display{font-size:42px}
+  .modal{padding:10px}
+  .panel{padding:18px;border-radius:18px;max-height:92vh;max-height:92dvh}
+  .field input[type=text],.field input[type=password],.field textarea,.field select{font-size:16px}
+  .setup{margin-top:8px}
+}
+@media (max-width:520px) and (max-height:700px){
+  .key{height:11.5vw}
+  .calc-foot{display:none}
+  .setup-crypto{display:none}
+}
+</style>
+</head>
+<body data-screen="calc">
+
+<div class="bgfx" aria-hidden="true">
+  <span style="--x:6%;--y:14%;--d:0s">∑</span>
+  <span style="--x:86%;--y:8%;--d:1.4s">π</span>
+  <span style="--x:12%;--y:72%;--d:2.6s">√</span>
+  <span style="--x:88%;--y:64%;--d:.8s">±</span>
+  <span style="--x:46%;--y:4%;--d:3.4s">÷</span>
+  <span style="--x:70%;--y:86%;--d:2s">∞</span>
+</div>
+
+<main class="stage">
+  <div class="device" id="device">
+    <div class="screens">
+
+      <section class="screen screen-calc" id="screenCalc">
+        <div class="calc-top">
+          <span class="calc-brand">CALCULADORA</span>
+          <span class="calc-tag">AES-256 inside</span>
+        </div>
+
+        <div class="setup" id="setupOverlay">
+          <div class="setup-card" id="setupCard">
+            <button class="setup-min" id="setupMin" type="button" title="Minimizar / ampliar">–</button>
+            <div class="setup-lock">🛡️</div>
+            <div class="step-badge" id="setupStep">PASO 1 DE 2</div>
+            <h2 id="setupTitle">Crea tu clave secreta</h2>
+            <p id="setupDesc">Tecéala en el teclado de abajo y pulsa <b>« = »</b>.<br>Entre <b>4 y 12 dígitos</b>.</p>
+            <div class="setup-crypto">PBKDF2-SHA256 · 120 000 iteraciones<br>→ llave AES-256-GCM única para tu bóveda</div>
+            <div class="setup-err" id="setupErr"></div>
+          </div>
+        </div>
+
+        <div class="display-wrap" id="displayWrap">
+          <div class="expr" id="calcExpr">&nbsp;</div>
+          <div class="display" id="calcDisplay">0</div>
+        </div>
+        <div class="keys" id="keys">
+          <button class="key k-fn" type="button" data-key="C">C</button>
+          <button class="key k-fn" type="button" data-key="del">⌫</button>
+          <button class="key k-fn" type="button" data-key="%">%</button>
+          <button class="key k-op" type="button" data-key="÷">÷</button>
+          <button class="key" type="button" data-key="7">7</button>
+          <button class="key" type="button" data-key="8">8</button>
+          <button class="key" type="button" data-key="9">9</button>
+          <button class="key k-op" type="button" data-key="×">×</button>
+          <button class="key" type="button" data-key="4">4</button>
+          <button class="key" type="button" data-key="5">5</button>
+          <button class="key" type="button" data-key="6">6</button>
+          <button class="key k-op" type="button" data-key="−">−</button>
+          <button class="key" type="button" data-key="1">1</button>
+          <button class="key" type="button" data-key="2">2</button>
+          <button class="key" type="button" data-key="3">3</button>
+          <button class="key k-op" type="button" data-key="+">+</button>
+          <button class="key k-fn" type="button" data-key="±">±</button>
+          <button class="key" type="button" data-key="0">0</button>
+          <button class="key" type="button" data-key="." id="dotKey">.</button>
+          <button class="key k-eq" type="button" data-key="=">=</button>
+        </div>
+        <div class="calc-foot">clave de 4-12 dígitos + « = » abre la bóveda</div>
+      </section>
+
+      <section class="screen screen-vault" id="screenVault">
+        <header class="vhead">
+          <div class="vtitle" id="vTitle">
+            <h1><span id="vTitleText">Mi Bóveda</span> <span class="aes">AES-256</span></h1>
+            <span id="noteCount">0 notas · AES-256-GCM · PBKDF2</span>
+          </div>
+          <div class="vactions">
+            <button class="iconbtn" id="btnDecoder" title="Desencriptador">🔓</button>
+            <button class="iconbtn" id="btnSettings" title="Ajustes">⚙</button>
+            <button class="iconbtn" id="btnHelp" title="Ayuda">?</button>
+            <button class="iconbtn" id="btnLock" title="Bloquear">🔒</button>
+          </div>
+        </header>
+        <div class="vtoolbar">
+          <button class="btn-new" id="btnNew">＋ Nueva nota cifrada</button>
+        </div>
+        <div class="grid" id="notesGrid"></div>
+        <div class="empty" id="emptyState">
+          <span class="big">🗝️</span>
+          <p id="emptyText">Tu bóveda está vacía.<br>Crea tu primera nota: quedará cifrada con <b>AES-256-GCM</b>, codificada en Base64 y con el <b>sello de fecha</b> fusionado al final.</p>
+          <span class="mini" id="emptyMini">texto · imagen · voz · enlaces</span>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <p class="caption">cifrado real <b>AES-256-GCM</b> → Base64 → sello de fecha · <button id="resetApp" type="button">reiniciar app</button></p>
+</main>
+
+<!-- NUEVA NOTA -->
+<div class="modal" id="composerModal">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Nueva nota</h2>
+        <div class="sub" id="cSub">AES-256-GCM + Base64 + sello · automático 🔒</div>
+      </div>
+      <button class="xbtn" data-close="composerModal">✕</button>
+    </div>
+    <div class="field">
+      <label>Título <em id="cTitleEm">(opcional · no se cifra)</em></label>
+      <input type="text" id="cTitle" maxlength="60" placeholder="P. ej.: Idea proyecto"/>
+    </div>
+    <div class="field">
+      <label>Contenido</label>
+      <textarea id="cText" rows="5" placeholder="Escribe aquí…"></textarea>
+    </div>
+    <div class="attach-row">
+      <button class="attach-btn" id="cImgBtn" type="button">🖼️ Imagen</button>
+      <button class="attach-btn" id="cRecBtn" type="button">🎙️ Voz</button>
+      <input type="file" id="cImgInput" accept="image/*" hidden/>
+    </div>
+    <div class="previews" id="cPreviews"></div>
+    <div class="link-hint" id="linkHint"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="cCancel" type="button">Cancelar</button>
+      <button class="btn btn-primary" id="cSave" type="button">🔒 Cifrar y guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTA: pantalla negra con Copiar / Eliminar -->
+<div class="modal" id="noteModal">
+  <div class="panel dark">
+    <div class="panel-head">
+      <div>
+        <h2 id="nTitle">Nota</h2>
+        <div class="sub" id="nSub">nota</div>
+      </div>
+      <button class="xbtn" data-close="noteModal">✕</button>
+    </div>
+    <div id="nCodeView">
+      <div class="codebox" id="nCode"></div>
+      <div class="hold-hint" id="holdHint">mantén eliminar 5 s · te pedirá tu código</div>
+      <div class="modal-foot" style="margin-top:12px">
+        <button class="btn btn-ghost" id="nCopy" type="button">📋 Copiar</button>
+        <button class="btn btn-danger" id="nDelete" type="button">🗑️ Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESET (pantalla negra silenciosa) -->
+<div class="modal rescue" id="rescueModal">
+  <div class="rescue-box" id="rescueBox">
+    <div id="rescueCodeView">
+      <div class="rescue-label">reset</div>
+      <input class="rescue-input" id="rescueInput" type="password" maxlength="64" placeholder="····" autocomplete="off"/>
+      <div class="rescue-err" id="rescueErr"></div>
+      <div class="rescue-row">
+        <button class="rescue-btn" id="rescueCancel" type="button">· salir ·</button>
+        <button class="rescue-btn primary" id="rescueOk" type="button">eliminar</button>
+      </div>
+    </div>
+    <div class="rescue-confirm" id="rescueConfirm" hidden>
+      <p id="rescueWarn"></p>
+      <div class="rescue-row" style="margin-top:12px">
+        <button class="rescue-btn" id="rescueNo" type="button">· cancelar ·</button>
+        <button class="rescue-btn primary" id="rescueYes" type="button">sí, borrar todo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREAR / CAMBIAR CÓDIGO DE RESET -->
+<div class="modal" id="rcSetupModal">
+  <div class="panel dark" style="max-width:380px">
+    <div class="panel-head">
+      <div>
+        <h2>🆘 Código de RESET</h2>
+        <div class="sub">tu última salida de emergencia</div>
+      </div>
+      <button class="xbtn" data-close="rcSetupModal">✕</button>
+    </div>
+    <div class="rc-explain">
+      <p><b>¿Para qué sirve?</b> Si algún día <b>olvidas tu clave principal</b>, mantén pulsado <b>« . »</b> durante <b>10 segundos</b> en la calculadora (sentirás una vibración al completar), escribe este código y pulsa <b>eliminar</b> para <b>resetear la app de fábrica</b>.</p>
+      <p><b>¿Qué NO hace?</b> <span class="no">No descifra ni muestra tus notas.</span> El cifrado AES-256 las protege incluso de ti: el RESET solo permite <b>borrarlo todo</b> y crear una bóveda nueva.</p>
+      <p><b>Formato libre:</b> cualquier dígito, letra, palabra o carácter (mínimo 4). Cuanto más largo y raro, mejor.</p>
+    </div>
+    <div class="field" id="rcCurField" hidden><label>Código actual</label><input type="password" id="rcCur" maxlength="64" autocomplete="off"/></div>
+    <div class="field"><label>Nuevo código de RESET</label><input type="password" id="rc1" maxlength="64" autocomplete="off" placeholder="dígitos, letras, símbolos…"/></div>
+    <div class="field"><label>Repite el nuevo código</label><input type="password" id="rc2" maxlength="64" autocomplete="off"/></div>
+    <div class="set-msg" id="rcMsg"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="rcSkip" type="button">Omitir</button>
+      <button class="btn btn-primary" id="rcSave" type="button">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DESENCRIPTADOR COMPLETO: clave obligatoria, nunca se auto-ejecuta -->
+<div class="modal" id="decoderModal">
+  <div class="panel">
+    <div class="panel-head">
+      <div><h2>🔓 Desencriptador</h2><div class="sub">clave → sello → base64 → aes → nota real</div></div>
+      <button class="xbtn" data-close="decoderModal">✕</button>
+    </div>
+
+    <div class="d-notice" id="dNotice" hidden>
+      🔒 <b>Última vez que verás este aviso.</b> La próxima vez que abras una nota, mantén pulsado <b>🗑️ Eliminar</b> durante <b>5 segundos</b> y se abrirá este mismo desencriptador con tus claves.
+    </div>
+
+    <div class="pipe-wrap">
+      <div class="pipe" id="dPipe">
+        <div class="pstep"><span class="pdot">01</span><span class="plabel">CLAVE</span><span class="pcap"></span></div>
+        <div class="pstep"><span class="pdot">02</span><span class="plabel">SELLO</span><span class="pcap"></span></div>
+        <div class="pstep"><span class="pdot">03</span><span class="plabel">BASE64</span><span class="pcap"></span></div>
+        <div class="pstep"><span class="pdot">04</span><span class="plabel">AES</span><span class="pcap"></span></div>
+        <div class="pstep"><span class="pdot">05</span><span class="plabel">NOTA</span><span class="pcap"></span></div>
+      </div>
+    </div>
+    <div class="field"><label>Elegir nota</label><select id="dPick"></select></div>
+    <div class="field"><label>Código cifrado</label><textarea id="dInput" rows="4" placeholder="Pega código..." style="font-family:'JetBrains Mono',monospace;font-size:11px"></textarea></div>
+    <div class="field"><label>Clave secreta <em>(obligatoria)</em></label><input type="password" id="dManual" inputmode="numeric" maxlength="12" placeholder="tu clave de 4-12 dígitos" autocomplete="off"/></div>
+    <button class="btn btn-primary" id="dRun" style="width:100%" type="button">▶ Ejecutar desencriptado</button>
+    <div class="dec-res" id="dResult"></div>
+  </div>
+</div>
+
+<!-- AJUSTES -->
+<div class="modal" id="settingsModal">
+  <div class="panel">
+    <div class="panel-head">
+      <div><h2>⚙ Ajustes</h2><div class="sub">especificación criptográfica</div></div>
+      <button class="xbtn" data-close="settingsModal">✕</button>
+    </div>
+    <div class="spec">
+      <div class="spec-row"><span>Cifrado</span><b>AES-256-GCM</b></div>
+      <div class="spec-row"><span>Derivación</span><b>PBKDF2 · SHA-256 · 120k</b></div>
+      <div class="spec-row"><span>RESET</span><b id="setRescue">—</b></div>
+      <div class="spec-row"><span>Último backup realizado</span><b id="setBackup">—</b></div>
+      <div class="spec-row"><span>Sesión</span><b id="setStatus">—</b></div>
+      <div class="spec-row"><span>Notas</span><b id="setCount">0</b></div>
+    </div>
+
+    <h3 class="set-h">🆘 Código de RESET</h3>
+    <p class="set-p">Si olvidas tu clave: mantén <b>« . »</b> 10 s en la calculadora → escribe tu código de RESET → pulsa eliminar → reset de fábrica. 3 fallos = bloqueo 5 min.</p>
+    <button class="btn btn-ghost" id="sRescueBtn" style="width:100%" type="button">Crear / cambiar código de RESET</button>
+
+    <h3 class="set-h" style="margin-top:16px">☁️ Backup Base64</h3>
+    <p class="set-p">Exporta toda la bóveda (notas cifradas + sales) a un archivo «basemask + fecha», o restáurala desde uno. El proceso muestra su progreso.</p>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="bExport" type="button">⬇ Exportar</button>
+      <button class="btn btn-ghost" id="bImport" type="button">⬆ Importar</button>
+      <input type="file" id="bFile" accept=".txt,.b64,text/plain" hidden/>
+    </div>
+    <div class="bprog" id="bProg" hidden><div class="bprog-bar"><i id="bBar"></i></div><span id="bPct">0%</span></div>
+    <div class="set-msg" id="bMsg"></div>
+
+    <h3 class="set-h" style="margin-top:16px">🔁 Cambiar clave</h3>
+    <p class="set-p">Descifrará y recifrará todas las notas con la nueva clave (4-12 dígitos).</p>
+    <div class="field"><label>Actual</label><input type="password" id="sCur" inputmode="numeric" maxlength="12"/></div>
+    <div class="field"><label>Nueva</label><input type="password" id="sNew" inputmode="numeric" maxlength="12"/></div>
+    <div class="field"><label>Repite</label><input type="password" id="sNew2" inputmode="numeric" maxlength="12"/></div>
+    <button class="btn btn-primary" id="sRotate" style="width:100%" type="button">🔁 Cambiar y recifrar</button>
+    <div class="set-msg" id="sMsg"></div>
+    <div class="modal-foot" style="margin-top:12px"><button class="btn btn-danger" id="sReset" style="width:100%" type="button">Borrar todo</button></div>
+  </div>
+</div>
+
+<!-- AYUDA -->
+<div class="modal" id="helpModal">
+  <div class="panel">
+    <div class="panel-head"><div><h2>Cómo funciona</h2></div><button class="xbtn" data-close="helpModal">✕</button></div>
+    <ul class="help-list">
+      <li><span class="ico">🧮</span><span>Parece una <b>calculadora</b>. Nadie sospecha.</span></li>
+      <li><span class="ico">🔑</span><span>Clave <code>4-12 dígitos</code> + <code>=</code> entra. Genera llave AES-256.</span></li>
+      <li><span class="ico">⚡</span><span>Guarda: <code>nota → AES → Base64 → +fecha</code>.</span></li>
+      <li><span class="ico">🖤</span><span>Al abrir cualquier nota verás la <b>pantalla negra</b> con «Copiar» y «Eliminar».</span></li>
+      <li><span class="ico">🔓</span><span>Para desencriptar: mantén <code>🗑️</code> <b>5 s</b> → se abre el <b>Desencriptador completo</b> con sus 5 pasos y tu clave obligatoria.</span></li>
+      <li><span class="ico">🆘</span><span>¿Olvidas la clave? Mantén <code>.</code> <b>10 s</b> (vibración) → pantalla <b>RESET</b> → código de RESET → eliminar. 3 fallos = bloqueo 5 min.</span></li>
+      <li><span class="ico">☁️</span><span>En ⚙ Ajustes: <b>backup</b> exportar/importar en archivo Base64 con barra de progreso.</span></li>
+      <li><span class="ico">⚙</span><span>⚙ Ajustes, ? Ayuda y 🔒 Bloquear están siempre visibles en la bóveda.</span></li>
+      <li><span class="ico">⚠️</span><span>Cifrado real: sin clave y sin código de RESET, <b>pierdes las notas</b>. Lo borrado NO se recupera.</span></li>
+    </ul>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<!-- ══════════ SCRIPT CLÁSICO DE LA APP (nunca meter imports aquí) ══════════ -->
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const disp=$('#calcDisplay'), exprEl=$('#calcExpr'), keysEl=$('#keys'), dotKey=$('#dotKey');
+const device=$('#device'), displayWrap=$('#displayWrap');
+const setupOverlay=$('#setupOverlay'), setupCard=$('#setupCard'), setupMin=$('#setupMin');
+const setupStep=$('#setupStep'), setupTitle=$('#setupTitle'), setupDesc=$('#setupDesc'), setupErr=$('#setupErr');
+const grid=$('#notesGrid'), emptyState=$('#emptyState'), noteCount=$('#noteCount');
+const te=new TextEncoder(), td=new TextDecoder();
+const ITER=120000;
+const RLOCK_MS=5*60*1000;
+const cryptoOk=!!(window.crypto&&crypto.subtle);
+const pad=n=>String(n).padStart(2,'0');
+
+/* ---------- helpers ---------- */
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function linkify(s){return escapeHtml(s).replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g,'<br>');}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
+function strHash(s){let h=5381;for(let i=0;i<s.length;i++){h=((h<<5)+h+s.charCodeAt(i))>>>0;}return h;}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function buzz(pat){try{if(navigator.vibrate)navigator.vibrate(pat);}catch(e){}}
+function dateStamp(){const d=new Date();return `${d.getDate()}${d.getMonth()+1}${String(d.getFullYear()).slice(-2)}`;}
+function codeSuffix(code){const m=/(\d+)$/.exec(code);return m?m[1]:'';}
+function fmtDate(ts){return new Date(ts).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});}
+function bytesToB64(u8){let bin='';const CH=0x8000;for(let i=0;i<u8.length;i+=CH){bin+=String.fromCharCode.apply(null,u8.subarray(i,i+CH));}return btoa(bin);}
+function b64ToBytes(b64){const bin=atob(b64);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);return u8;}
+function toHex(u8){return Array.from(u8).map(b=>b.toString(16).padStart(2,'0')).join('');}
+function fromHex(h){const u8=new Uint8Array(h.length/2);for(let i=0;i<u8.length;i++)u8[i]=parseInt(h.substr(i*2,2),16);return u8;}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.classList.add('out'),2500);setTimeout(()=>t.remove(),3000);}
+async function copyText(txt){try{await navigator.clipboard.writeText(txt);toast('📋 Copiado');}catch(e){const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('📋 Copiado');}}
+
+/* ---------- crypto ---------- */
+async function pbkdf2Bits(pin,saltU8){
+  const base=await crypto.subtle.importKey('raw',te.encode('bv:'+pin),'PBKDF2',false,['deriveBits']);
+  return new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:saltU8,iterations:ITER,hash:'SHA-256'},base,256));
+}
+async function aesKeyFromPin(pin,saltU8){
+  const bits=await pbkdf2Bits(pin,saltU8);
+  return crypto.subtle.importKey('raw',bits,{name:'AES-GCM'},false,['encrypt','decrypt']);
+}
+async function encryptCode(obj,key){
+  const pt=te.encode(JSON.stringify(obj));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,pt));
+  const out=new Uint8Array(12+ct.length);out.set(iv);out.set(ct,12);
+  return bytesToB64(out)+dateStamp();
+}
+async function decryptBytes(bytes,key){
+  if(!bytes||bytes.length<=13)throw 0;
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12)},key,bytes.slice(12));
+  return JSON.parse(td.decode(pt));
+}
+function structuralCandidates(code){
+  code=String(code||'').replace(/\s+/g,'');
+  const out=[];
+  for(let k=1;k<=14;k++){
+    if(code.length<=k)break;
+    const b=code.slice(0,-k), s=code.slice(-k);
+    if(/^\d+$/.test(s)&&/^[A-Za-z0-9+/]+={0,2}$/.test(b)&&b.length%4===0) out.push({b,s});
+  }
+  return out;
+}
+async function decodeWithKey(code,key){
+  const cands=structuralCandidates(code);
+  for(const c of cands){
+    let bytes=null; try{bytes=b64ToBytes(c.b);}catch(e){continue;}
+    if(key){try{const p=await decryptBytes(bytes,key);if(p&&p.v===2)return{p,s:c.s,mode:'AES-256-GCM'};}catch(e){}}
+    try{const p=JSON.parse(td.decode(bytes));if(p&&p.v===1)return{p,s:c.s,mode:'Base64'};}catch(e){}
+  }
+  return null;
+}
+
+/* ---------- estado ---------- */
+let auth=null; try{auth=JSON.parse(localStorage.getItem('bv2_auth')||'null');}catch(e){}
+let notes=[]; try{notes=JSON.parse(localStorage.getItem('bv2_notes')||'[]');}catch(e){}
+let aesKey=null, busy=false;
+let tut=localStorage.getItem('bv2_tut')==='1';
+let seenDec=localStorage.getItem('bv2_dec')==='1';
+function persist(){try{localStorage.setItem('bv2_notes',JSON.stringify(notes));return true;}catch(e){toast('⚠️ Storage lleno');return false;}}
+async function verifyPin(pin){return toHex(await pbkdf2Bits(pin,fromHex(auth.sa)))===auth.ah;}
+async function verifyReset(code){return !!(auth&&auth.rc&&auth.rcs)&&toHex(await pbkdf2Bits(code,fromHex(auth.rcs)))===auth.rc;}
+
+function applyMode(){
+  document.body.classList.toggle('onboarded',!!auth);
+  document.body.classList.toggle('clean',tut);
+  $('#vTitleText').textContent=tut?'Notas':'Mi Bóveda';
+  noteCount.textContent=tut
+    ? (notes.length+(notes.length===1?' nota':' notas'))
+    : (notes.length+(notes.length===1?' nota · ':' notas · ')+'AES-256-GCM · PBKDF2');
+  $('#btnNew').textContent=tut?'＋ Nueva nota':'＋ Nueva nota cifrada';
+  $('#cSub').style.display=tut?'none':'block';
+  $('#cTitleEm').style.display=tut?'none':'inline';
+  if(!$('#cSave').disabled)$('#cSave').textContent=tut?'Guardar':'🔒 Cifrar y guardar';
+  if(tut){
+    $('#emptyText').innerHTML='No hay notas.<br>Crea una nueva con el botón de arriba.';
+    $('#emptyMini').style.display='none';
+  }else{
+    $('#emptyText').innerHTML='Tu bóveda está vacía.<br>Crea tu primera nota: quedará cifrada con <b>AES-256-GCM</b>, codificada en Base64 y con el <b>sello de fecha</b> fusionado al final.';
+    $('#emptyMini').style.display='';
+  }
+}
+
+setupMin.addEventListener('click',()=>{
+  setupCard.classList.toggle('min');
+  setupMin.textContent=setupCard.classList.contains('min')?'+':'–';
+});
+
+/* ---------- calculadora ---------- */
+let cur='0',prevVal=null,opKey=null,typing=false,justEq=false,raw='',exprLine='';
+const OPS={'+':(a,b)=>a+b,'−':(a,b)=>a-b,'×':(a,b)=>a*b,'÷':(a,b)=>a/b};
+function fmt(n){if(n===null||isNaN(n)||!isFinite(n))return'Error';let s=parseFloat(Number(n).toPrecision(12)).toString();return s.length>14?Number(n).toExponential(6):s;}
+function renderCalc(){
+  exprEl.textContent=exprLine||'\u00A0';
+  disp.textContent=cur;
+  const n=cur.length;
+  disp.style.fontSize=n>16?'24px':n>11?'30px':n>7?'38px':'46px';
+}
+function setExpr(msg,warn){exprLine=msg;exprEl.classList.toggle('warn',!!warn);renderCalc();}
+function resetCalc(){cur='0';prevVal=null;opKey=null;typing=false;justEq=false;raw='';exprLine='';exprEl.classList.remove('warn');}
+function shake(){displayWrap.classList.remove('shake');void displayWrap.offsetWidth;displayWrap.classList.add('shake');}
+function inputDigit(d){
+  if(justEq)resetCalc();
+  if(!typing){cur=(d==='.')?'0.':d;typing=true;raw=d;}
+  else{
+    if(d==='.'&&cur.includes('.'))return;
+    if(cur.replace(/[^0-9]/g,'').length>=16&&d!=='.')return;
+    cur+=d;raw+=d;
+  }
+  renderCalc();
+}
+function applyOp(k){
+  if(opKey&&typing){prevVal=OPS[opKey](prevVal,parseFloat(cur));cur=fmt(prevVal);}
+  else if(prevVal===null){prevVal=parseFloat(cur);}
+  opKey=k;typing=false;justEq=false;raw='';
+  exprLine=fmt(prevVal)+' '+k;
+  renderCalc();
+}
+async function equals(){
+  if(busy)return;
+  if(!auth){handleSetup(raw);return;}
+  if(raw&&raw.length>=4){
+    busy=true;setExpr('verificando…');
+    let ok=false;try{ok=await verifyPin(raw);}catch(e){}
+    busy=false;
+    if(ok)await doUnlock(raw);
+    else{setExpr('✗ clave incorrecta',true);cur='0';typing=false;raw='';renderCalc();shake();}
+    return;
+  }
+  if(opKey!==null&&prevVal!==null){
+    const b=parseFloat(cur);
+    exprLine=fmt(prevVal)+' '+opKey+' '+fmt(b)+' =';
+    cur=fmt(OPS[opKey](prevVal,b));
+    prevVal=null;opKey=null;typing=false;justEq=true;raw='';
+    renderCalc();
+  }else{
+    exprLine=cur+' =';justEq=true;raw='';renderCalc();
+  }
+}
+function applyKey(k){
+  if(busy)return;
+  if(/^[0-9]$/.test(k)||k==='.')inputDigit(k);
+  else if(k==='C'){resetCalc();renderCalc();}
+  else if(k==='del'){
+    if(typing){cur=cur.slice(0,-1);if(cur===''||cur==='-')cur='0';if(cur==='0')typing=false;raw=raw.slice(0,-1);}
+    renderCalc();
+  }
+  else if(k==='±'){if(cur!=='0'&&cur!=='Error'){cur=cur.startsWith('-')?cur.slice(1):'-'+cur;raw='';}renderCalc();}
+  else if(k==='%'){cur=fmt(parseFloat(cur)/100);raw='';renderCalc();}
+  else if(k==='=')equals();
+  else applyOp(k);
+}
+keysEl.addEventListener('click',e=>{
+  const b=e.target.closest('[data-key]');if(!b)return;
+  applyKey(b.dataset.key);
+});
+keysEl.addEventListener('pointerdown',e=>{
+  const b=e.target.closest('[data-key]');if(!b)return;
+  b.classList.add('pressed');setTimeout(()=>b.classList.remove('pressed'),140);
+},{passive:true});
+
+/* ---------- RESET SILENCIOSO: « . » 10 s ---------- */
+let dotTimer=null,dotFired=false;
+dotKey.addEventListener('contextmenu',e=>e.preventDefault());
+dotKey.addEventListener('pointerdown',()=>{
+  dotFired=false;
+  clearTimeout(dotTimer);
+  dotTimer=setTimeout(()=>{
+    if(document.body.dataset.screen!=='calc'||anyModalOpen()||busy)return;
+    dotFired=true;
+    buzz([90,50,90]);
+    openRescue();
+  },10000);
+});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>dotKey.addEventListener(ev,()=>clearTimeout(dotTimer)));
+dotKey.addEventListener('click',e=>{
+  if(dotFired){dotFired=false;e.stopPropagation();e.preventDefault();}
+},true);
+
+/* ---------- flujo RESET ---------- */
+const rescueModal=$('#rescueModal'),rescueBox=$('#rescueBox'),rescueCodeView=$('#rescueCodeView'),rescueConfirm=$('#rescueConfirm');
+const rescueInput=$('#rescueInput'),rescueErr=$('#rescueErr'),rescueOk=$('#rescueOk'),rescueWarn=$('#rescueWarn');
+let lockInt=null,resBusy=false;
+function rescueLockedUntil(){const t=+localStorage.getItem('bv2_rlock')||0;return t>Date.now()?t:0;}
+function stopLockCountdown(){if(lockInt){clearInterval(lockInt);lockInt=null;}}
+function startLockCountdown(until){
+  stopLockCountdown();
+  rescueInput.disabled=true;rescueOk.disabled=true;
+  const tick=()=>{
+    const ms=until-Date.now();
+    if(ms<=0){stopLockCountdown();localStorage.removeItem('bv2_rlock');rescueInput.disabled=false;rescueOk.disabled=false;rescueErr.textContent='';return;}
+    const m=Math.floor(ms/60000),s=Math.floor(ms%60000/1000);
+    rescueErr.textContent=`· bloqueado ${m}:${pad(s)} ·`;
+  };
+  tick();lockInt=setInterval(tick,500);
+}
+function shakeRescue(){rescueBox.classList.remove('shake');void rescueBox.offsetWidth;rescueBox.classList.add('shake');}
+function showConfirm(html){
+  rescueWarn.innerHTML=html;
+  rescueCodeView.hidden=true;rescueConfirm.hidden=false;
+}
+function openRescue(){
+  if(!auth)return;
+  rescueCodeView.hidden=false;rescueConfirm.hidden=true;
+  rescueInput.value='';rescueErr.textContent='';
+  const until=rescueLockedUntil();
+  if(until)startLockCountdown(until);
+  else{stopLockCountdown();rescueInput.disabled=false;rescueOk.disabled=false;}
+  openModal('rescueModal');
+  setTimeout(()=>{if(!rescueInput.disabled)rescueInput.focus();},90);
+}
+function closeRescue(){stopLockCountdown();closeModal('rescueModal');}
+$('#rescueCancel').addEventListener('click',closeRescue);
+$('#rescueNo').addEventListener('click',closeRescue);
+rescueOk.addEventListener('click',async()=>{
+  if(resBusy||rescueLockedUntil())return;
+  const v=rescueInput.value.trim();
+  if(!v){rescueErr.textContent='· escribe tu código ·';shakeRescue();return;}
+  resBusy=true;rescueOk.disabled=true;
+  let ok=false;try{ok=await verifyReset(v);}catch(e){}
+  resBusy=false;rescueOk.disabled=false;
+  if(ok){
+    localStorage.removeItem('bv2_rattempts');localStorage.removeItem('bv2_rlock');stopLockCountdown();
+    showConfirm(
+      `¿Seguro?<br>Se eliminarán <b>${notes.length}</b> nota${notes.length===1?'':'s'} y TODOS los datos de la app.<br>`+
+      `<span class="wipe-warn">Los archivos borrados NO serán recuperables.</span>`
+    );
+  }else{
+    let at=(+localStorage.getItem('bv2_rattempts')||0)+1;
+    if(at>=3){
+      localStorage.removeItem('bv2_rattempts');
+      localStorage.setItem('bv2_rlock',String(Date.now()+RLOCK_MS));
+      rescueInput.value='';
+      startLockCountdown(Date.now()+RLOCK_MS);
+      buzz(40);
+    }else{
+      localStorage.setItem('bv2_rattempts',String(at));
+      rescueErr.textContent=`· incorrecto ${at}/3 ·`;
+      rescueInput.value='';shakeRescue();
+    }
+  }
+});
+$('#rescueYes').addEventListener('click',()=>{
+  ['bv2_auth','bv2_notes','bv2_tut','bv2_dec','bv2_holdhint','bv2_rattempts','bv2_rlock','bv2_rcskip','bv2_lastbackup'].forEach(k=>localStorage.removeItem(k));
+  location.reload();
+});
+
+/* ---------- código de RESET ---------- */
+const rcCurField=$('#rcCurField'),rcCur=$('#rcCur'),rc1=$('#rc1'),rc2=$('#rc2'),rcMsg=$('#rcMsg'),rcSkip=$('#rcSkip');
+let rcMode='create';
+function openRcSetup(mode){
+  rcMode=mode;
+  rcCurField.hidden=(mode!=='change');
+  rcSkip.style.display=(mode==='create')?'':'none';
+  rcCur.value='';rc1.value='';rc2.value='';rcMsg.textContent='';rcMsg.className='set-msg';
+  openModal('rcSetupModal');
+}
+$('#sRescueBtn').addEventListener('click',()=>openRcSetup(auth&&auth.rc?'change':'create'));
+rcSkip.addEventListener('click',()=>{localStorage.setItem('bv2_rcskip','1');closeModal('rcSetupModal');});
+$('#rcSave').addEventListener('click',async()=>{
+  const n1=rc1.value.trim(),n2=rc2.value.trim();
+  rcMsg.className='set-msg';rcMsg.textContent='';
+  if(n1.length<4){rcMsg.className='set-msg err';rcMsg.textContent='⚠️ Mínimo 4 caracteres (cualquier tipo).';return;}
+  if(n1.length>64){rcMsg.className='set-msg err';rcMsg.textContent='⚠️ Máximo 64 caracteres.';return;}
+  if(n1!==n2){rcMsg.className='set-msg err';rcMsg.textContent='⚠️ No coinciden.';return;}
+  if(rcMode==='change'){
+    const c=rcCur.value.trim();
+    let ok=false;try{ok=await verifyReset(c);}catch(e){}
+    if(!ok){rcMsg.className='set-msg err';rcMsg.textContent='✗ Código actual incorrecto.';return;}
+  }
+  const rcs=crypto.getRandomValues(new Uint8Array(16));
+  auth.rc=toHex(await pbkdf2Bits(n1,rcs));
+  auth.rcs=toHex(rcs);
+  localStorage.setItem('bv2_auth',JSON.stringify(auth));
+  closeModal('rcSetupModal');
+  toast('🆘 Código de RESET guardado');
+});
+
+/* ---------- setup ---------- */
+let setupStage=0,pendingPin=null,pendingAuth='',tmpSa=null,tmpSk=null,pendingKey=null;
+function updateSetupUI(err){
+  setupErr.textContent=err||'';
+  if(setupStage===0){
+    setupStep.textContent='PASO 1 DE 2';
+    setupTitle.textContent='Crea tu clave secreta';
+    setupDesc.innerHTML='Tecéala en el teclado de abajo y pulsa <b>« = »</b>.<br>Entre <b>4 y 12 dígitos</b>.';
+  }else{
+    setupStep.textContent='PASO 2 DE 2';
+    setupTitle.textContent='Repite la clave';
+    setupDesc.innerHTML='Teclea la <b>misma clave</b> de nuevo y pulsa <b>« = »</b>.';
+  }
+}
+async function handleSetup(digits){
+  if(busy)return;
+  if(!cryptoOk){setupErr.textContent='⚠️ Web Crypto no disponible (usa HTTPS).';return;}
+  if(!/^\d{4,12}$/.test(digits)){setupErr.textContent='⚠️ La clave debe tener 4-12 dígitos.';shake();return;}
+  if(setupStage===0){
+    busy=true;setupErr.textContent='';setExpr('derivando PBKDF2…');cur='· · ·';renderCalc();
+    try{
+      pendingPin=digits;
+      tmpSa=crypto.getRandomValues(new Uint8Array(16));
+      tmpSk=crypto.getRandomValues(new Uint8Array(16));
+      pendingAuth=toHex(await pbkdf2Bits(digits,tmpSa));
+      pendingKey=await aesKeyFromPin(digits,tmpSk);
+    }catch(e){busy=false;setupErr.textContent='⚠️ Error crypto.';return;}
+    busy=false;setupStage=1;updateSetupUI();
+    resetCalc();
+    setExpr('· retenida · repite ahora ·');
+    cur='••••••';renderCalc();
+  }else{
+    if(digits===pendingPin){
+      auth={sa:toHex(tmpSa),sk:toHex(tmpSk),ah:pendingAuth};
+      localStorage.setItem('bv2_auth',JSON.stringify(auth));
+      aesKey=pendingKey;
+      setupOverlay.classList.add('hidden');
+      applyMode();
+      resetCalc();setExpr('✓');
+      toast('🛡️ Bóveda creada');
+      setTimeout(()=>openRcSetup('create'),500);
+    }else{
+      setupStage=0;pendingPin=null;pendingKey=null;
+      updateSetupUI('✗ No coinciden. Intenta de nuevo.');
+      resetCalc();renderCalc();shake();
+    }
+  }
+}
+if(!cryptoOk)updateSetupUI('⚠️ Web Crypto no disponible.');
+else if(auth)setupOverlay.classList.add('hidden');
+else updateSetupUI();
+
+/* ---------- unlock / lock ---------- */
+async function doUnlock(pin){
+  setExpr('derivando llave…');disp.textContent='▪ ▫ ▪';
+  try{aesKey=await aesKeyFromPin(pin,fromHex(auth.sk));}catch(e){aesKey=null;}
+  device.classList.add('unlocking');
+  await sleep(550);
+  document.body.dataset.screen='vault';
+  applyMode();renderVault();
+  toast('🔓 Bóveda abierta');
+  resetCalc();renderCalc();
+  setTimeout(()=>device.classList.remove('unlocking'),400);
+  if(auth&&!auth.rc&&!localStorage.getItem('bv2_rcskip'))setTimeout(()=>openRcSetup('create'),700);
+}
+$('#btnLock').addEventListener('click',()=>{
+  aesKey=null;document.body.dataset.screen='calc';
+  resetCalc();renderCalc();
+  toast('🔒 Bloqueado');
+});
+
+/* ---------- bóveda ---------- */
+const KINDS={texto:'📝 Texto',imagen:'🖼️ Imagen',voz:'🎙️ Voz',enlace:'🔗 Enlace'};
+function renderVault(){
+  grid.innerHTML='';
+  applyMode();
+  emptyState.style.display=notes.length?'none':'block';
+  [...notes].sort((a,b)=>b.ts-a.ts).forEach(note=>{
+    const h=strHash(note.id), rot=((h%5)-2)*0.45;
+    const el=document.createElement('article');
+    el.className='note c'+(h%6);el.style.setProperty('--rot',rot.toFixed(2)+'deg');
+    const badge=(KINDS[note.kind]||'📝 Texto')+(tut?'':' · AES');
+    const foot=tut
+      ? `<span>${fmtDate(note.ts)}</span>`
+      : `<span>${fmtDate(note.ts)}</span><span>sello ${escapeHtml(codeSuffix(note.code))}</span>`;
+    el.innerHTML=
+      `<span class="nbadge">${badge}</span>`+
+      `<h3 class="${note.title?'':'untitled'}">${note.title?escapeHtml(note.title):'Sin título'}</h3>`+
+      `<code>${escapeHtml(note.code.slice(0,80))}…</code>`+
+      `<footer>${foot}</footer>`;
+    el.addEventListener('click',()=>openNote(note));
+    grid.appendChild(el);
+  });
+}
+(function(){
+  const t=$('#vTitle');let ht=null;
+  t.addEventListener('contextmenu',e=>e.preventDefault());
+  t.addEventListener('pointerdown',()=>{ht=setTimeout(()=>openSettings(),900);});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>t.addEventListener(ev,()=>clearTimeout(ht)));
+})();
+
+/* ---------- modales ---------- */
+function openModal(id){$('#'+id).classList.add('open');}
+function closeModal(id){$('#'+id).classList.remove('open');}
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeModal(b.dataset.close)));
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{
+  if(e.target===m){m.classList.remove('open');if(m.id==='rescueModal')stopLockCountdown();}
+}));
+function anyModalOpen(){return !!document.querySelector('.modal.open');}
+
+/* ---------- abrir nota: pantalla negra siempre; 5 s → desencriptador completo ---------- */
+let currentNote=null;
+const holdHint=$('#holdHint');
+function openNote(note){
+  currentNote=note;
+  if(!seenDec){
+    seenDec=true;localStorage.setItem('bv2_dec','1');
+    openDecoder(note.code,note.id,true);
+    return;
+  }
+  $('#nTitle').textContent=note.title||'Nota';
+  $('#nSub').textContent='nota';
+  $('#nCode').textContent=note.code;
+  if(localStorage.getItem('bv2_hint'))holdHint.style.display='none';
+  else{holdHint.style.display='';localStorage.setItem('bv2_hint','1');}
+  resetDeleteBtn();
+  openModal('noteModal');
+}
+$('#nCopy').addEventListener('click',()=>{if(currentNote)copyText(currentNote.code);});
+
+const nDelete=$('#nDelete');
+let holdInt=null,holdT0=0,holding=false,heldLong=false;
+function resetDeleteBtn(){holding=false;heldLong=false;clearInterval(holdInt);nDelete.classList.remove('holding');nDelete.style.setProperty('--hp',0);nDelete.textContent='🗑️ Eliminar';}
+nDelete.addEventListener('contextmenu',e=>e.preventDefault());
+nDelete.addEventListener('pointerdown',e=>{
+  e.preventDefault();holding=true;heldLong=false;holdT0=Date.now();
+  nDelete.classList.add('holding');
+  holdInt=setInterval(()=>{
+    const el=Date.now()-holdT0,p=Math.min(1,el/5000);
+    nDelete.style.setProperty('--hp',p);
+    nDelete.textContent=Math.max(0,Math.ceil((5000-el)/1000))+' s';
+    if(p>=1){
+      clearInterval(holdInt);holding=false;heldLong=true;
+      nDelete.classList.remove('holding');nDelete.style.setProperty('--hp',0);nDelete.textContent='🗑️ Eliminar';
+      /* SIEMPRE el desencriptador completo con pipeline y clave */
+      if(currentNote)openDecoder(currentNote.code,currentNote.id,false);
+    }
+  },80);
+});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>nDelete.addEventListener(ev,()=>{
+  if(!holding)return;
+  holding=false;clearInterval(holdInt);
+  nDelete.classList.remove('holding');nDelete.style.setProperty('--hp',0);nDelete.textContent='🗑️ Eliminar';
+}));
+nDelete.addEventListener('click',()=>{
+  if(heldLong){heldLong=false;return;}
+  if(!currentNote)return;
+  if(confirm('¿Eliminar esta nota?')){
+    notes=notes.filter(n=>n.id!==currentNote.id);
+    persist();renderVault();closeModal('noteModal');toast('🗑️ Eliminada');
+  }
+});
+
+/* ---------- compositor ---------- */
+let draftImg=null,draftAudio=null,mr=null,recChunks=[],recInt=null,recSec=0;
+const cTitle=$('#cTitle'),cText=$('#cText'),cPreviews=$('#cPreviews'),linkHint=$('#linkHint'),recBtn=$('#cRecBtn'),cSave=$('#cSave');
+function openComposer(){
+  cTitle.value='';cText.value='';draftImg=null;draftAudio=null;linkHint.textContent='';
+  cSave.disabled=false;cSave.textContent=tut?'Guardar':'🔒 Cifrar y guardar';
+  if(mr&&mr.state==='recording')try{mr.stop();}catch(e){}
+  recBtn.classList.remove('rec-on');recBtn.textContent='🎙️ Voz';
+  renderPreviews();openModal('composerModal');
+  setTimeout(()=>cText.focus(),80);
+}
+$('#btnNew').addEventListener('click',openComposer);
+$('#cCancel').addEventListener('click',()=>closeModal('composerModal'));
+function renderPreviews(){
+  cPreviews.innerHTML='';
+  if(draftImg){
+    const c=document.createElement('div');c.className='chip';
+    const img=document.createElement('img');img.src=draftImg;
+    const rm=document.createElement('button');rm.textContent='✕';rm.type='button';
+    rm.onclick=()=>{draftImg=null;renderPreviews();};
+    c.append(img,document.createTextNode('Imagen'),rm);cPreviews.appendChild(c);
+  }
+  if(draftAudio){
+    const c=document.createElement('div');c.className='chip';
+    const rm=document.createElement('button');rm.textContent='✕';rm.type='button';
+    rm.onclick=()=>{draftAudio=null;renderPreviews();};
+    c.append(document.createTextNode('🎙️ Audio'),rm);cPreviews.appendChild(c);
+  }
+}
+$('#cImgBtn').addEventListener('click',()=>$('#cImgInput').click());
+$('#cImgInput').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  if(f.size>4*1024*1024){toast('⚠️ Max 4MB');e.target.value='';return;}
+  const fr=new FileReader();fr.onload=()=>{draftImg=fr.result;renderPreviews();toast('🖼️ Lista');};fr.readAsDataURL(f);e.target.value='';
+});
+recBtn.addEventListener('click',async()=>{
+  if(mr&&mr.state==='recording'){mr.stop();return;}
+  if(!navigator.mediaDevices){toast('⚠️ Sin micro');return;}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    mr=new MediaRecorder(stream);recChunks=[];
+    mr.ondataavailable=ev=>{if(ev.data.size)recChunks.push(ev.data);};
+    mr.onstop=()=>{
+      stream.getTracks().forEach(t=>t.stop());
+      const fr=new FileReader();fr.onload=()=>{draftAudio=fr.result;renderPreviews();toast('🎙️ Lista');};
+      fr.readAsDataURL(new Blob(recChunks,{type:mr.mimeType||'audio/webm'}));
+      clearInterval(recInt);recBtn.classList.remove('rec-on');recBtn.textContent='🎙️ Voz';mr=null;
+    };
+    mr.start();recSec=0;recBtn.classList.add('rec-on');recBtn.textContent='⏺ 00:00';
+    recInt=setInterval(()=>{recSec++;recBtn.textContent=`⏺ ${pad(Math.floor(recSec/60))}:${pad(recSec%60)}`;},1000);
+  }catch(e){toast('⚠️ Permiso denegado');}
+});
+cText.addEventListener('input',()=>{
+  const l=cText.value.match(/https?:\/\/[^\s]+/gi)||[];
+  linkHint.innerHTML=l.length?`🔗 <b>${l.length}</b> enlace(s)`:'';
+});
+cSave.addEventListener('click',async()=>{
+  const text=cText.value.trim();
+  if(!text&&!draftImg&&!draftAudio){toast('✍️ Escribe algo');return;}
+  if(!aesKey){toast('⚠️ Sin llave');return;}
+  cSave.disabled=true;cSave.textContent='Guardando…';
+  const links=text.match(/https?:\/\/[^\s]+/gi)||[];
+  let kind='texto';if(draftAudio)kind='voz';else if(draftImg)kind='imagen';else if(links.length)kind='enlace';
+  try{
+    const code=await encryptCode({v:2,k:kind,text,img:draftImg,audio:draftAudio,links},aesKey);
+    notes.unshift({id:uid(),title:cTitle.value.trim(),code,ts:Date.now(),kind});
+    if(!persist()){notes.shift();cSave.disabled=false;cSave.textContent=tut?'Guardar':'🔒 Cifrar y guardar';return;}
+    if(!tut){tut=true;localStorage.setItem('bv2_tut','1');}
+    closeModal('composerModal');
+    applyMode();renderVault();
+    toast('✓ Guardada');
+  }catch(e){toast('⚠️ Error');cSave.disabled=false;cSave.textContent=tut?'Guardar':'🔒 Cifrar y guardar';}
+});
+
+/* ---------- desencriptador completo ---------- */
+const dPick=$('#dPick'),dInput=$('#dInput'),dManual=$('#dManual'),dResult=$('#dResult'),dRunBtn=$('#dRun'),dNotice=$('#dNotice');
+const pipeSteps=[...document.querySelectorAll('#dPipe .pstep')];
+let dFirst=false;
+function pipeReset(){pipeSteps.forEach((st,i)=>{st.className='pstep';st.querySelector('.pcap').textContent='';st.querySelector('.pdot').textContent='0'+(i+1);});}
+function pipeState(i,state,cap){
+  const st=pipeSteps[i];st.className='pstep '+state;
+  if(cap!==undefined)st.querySelector('.pcap').textContent=cap;
+  const dot=st.querySelector('.pdot');
+  if(state==='ok')dot.textContent='✓';else if(state==='fail')dot.textContent='✕';else dot.textContent='0'+(i+1);
+}
+function pipeFail(i,msg){pipeState(i,'fail');dResult.innerHTML='<div class="dec-err">⛔ Paso '+(i+1)+': '+msg+'</div>';}
+async function runDecode(){
+  if(!cryptoOk){dResult.innerHTML='<div class="dec-err">⛔ Sin Crypto</div>';return;}
+  pipeReset();dResult.innerHTML='';dRunBtn.disabled=true;dRunBtn.textContent='Procesando…';
+  try{
+    pipeState(0,'active');await sleep(200);
+    const manual=dManual.value.trim();
+    if(!manual){pipeFail(0,'Introduce tu clave secreta (obligatoria).');return;}
+    if(!/^\d{4,12}$/.test(manual)){pipeFail(0,'La clave debe tener 4-12 dígitos.');return;}
+    let ok=false;try{ok=await verifyPin(manual);}catch(e){}
+    if(!ok){pipeFail(0,'Clave incorrecta.');return;}
+    let key=null;try{key=await aesKeyFromPin(manual,fromHex(auth.sk));}catch(e){}
+    if(!key){pipeFail(0,'No se pudo derivar la llave.');return;}
+    pipeState(0,'ok','KDF ✓');await sleep(180);
+
+    pipeState(1,'active');await sleep(200);
+    const cands=structuralCandidates(dInput.value);
+    if(!cands.length){pipeFail(1,'Sello inválido.');return;}
+    pipeState(1,'ok','sello '+cands[0].s);await sleep(180);
+
+    pipeState(2,'active');await sleep(200);
+    const bytesList=cands.map(c=>{try{return b64ToBytes(c.b);}catch(e){return null;}}).filter(Boolean);
+    if(!bytesList.length){pipeFail(2,'Base64 corrupto.');return;}
+    pipeState(2,'ok',bytesList[0].length+' B');await sleep(180);
+
+    pipeState(3,'active','GCM…');
+    let payload=null,mode='';
+    for(const bytes of bytesList){
+      try{const p=await decryptBytes(bytes,key);if(p&&p.v===2){payload=p;mode='AES-256-GCM';break;}}catch(e){}
+      try{const p=JSON.parse(td.decode(bytes));if(p&&p.v===1){payload=p;mode='Base64';break;}}catch(e){}
+    }
+    if(!payload){pipeFail(3,'Clave incorrecta / contenido alterado.');return;}
+    pipeState(3,'ok','GCM ✓');await sleep(180);
+
+    pipeState(4,'active');await sleep(200);
+    const picked=notes.find(n=>n.id===dPick.value);
+    let html='<div class="dec-ok"><div class="dec-meta"><span class="cipher">🛡️ '+mode+'</span><span>📅 '+escapeHtml(cands[0].s)+'</span></div>';
+    if(picked&&picked.title)html+='<div class="dec-title">'+escapeHtml(picked.title)+'</div>';
+    if(payload.text)html+='<div class="dec-text">'+linkify(payload.text)+'</div>';
+    if(payload.img)html+='<img class="dec-img" src="'+payload.img+'"/>';
+    if(payload.audio)html+='<audio class="dec-audio" controls src="'+payload.audio+'"></audio>';
+    if(payload.links&&payload.links.length)html+='<div class="dec-links">'+payload.links.map(l=>'<a href="'+escapeHtml(l)+'" target="_blank" rel="noopener">↗ '+escapeHtml(l)+'</a>').join('')+'</div>';
+    html+='</div>';
+    dResult.innerHTML=html;pipeState(4,'ok','revelada');
+    if(dFirst){dFirst=false;setTimeout(()=>toast('🔒 Próxima vez: mantén 🗑️ 5 s para desencriptar'),600);}
+  }finally{dRunBtn.disabled=false;dRunBtn.textContent='▶ Ejecutar desencriptado';}
+}
+function openDecoder(prefill,pickId,firstTime){
+  dFirst=!!firstTime;
+  dNotice.hidden=!firstTime;
+  dPick.innerHTML='<option value="">— elegir nota —</option>';
+  notes.forEach(n=>{const o=document.createElement('option');o.value=n.id;o.textContent=(n.title||'Sin título');dPick.appendChild(o);});
+  if(pickId)dPick.value=pickId;
+  dInput.value=prefill||'';
+  dManual.value='';
+  dResult.innerHTML='';pipeReset();
+  openModal('decoderModal');
+}
+$('#btnDecoder').addEventListener('click',()=>openDecoder());
+dPick.addEventListener('change',()=>{const n=notes.find(x=>x.id===dPick.value);if(n){dInput.value=n.code;dResult.innerHTML='';pipeReset();}});
+dRunBtn.addEventListener('click',runDecode);
+
+/* ---------- ajustes + backup ---------- */
+const bProg=$('#bProg'),bBar=$('#bBar'),bPct=$('#bPct'),bMsg=$('#bMsg'),bExport=$('#bExport'),bImport=$('#bImport'),bFile=$('#bFile');
+function setProg(p){bBar.style.width=p+'%';bPct.textContent=p+'%';}
+function showProg(){bProg.hidden=false;setProg(0);}
+function hideProgLater(){setTimeout(()=>{bProg.hidden=true;},900);}
+function openSettings(){
+  $('#setStatus').textContent=aesKey?'activa ✓':'inactiva';
+  $('#setCount').textContent=notes.length;
+  $('#setRescue').textContent=(auth&&auth.rc)?'configurado ✓':'sin configurar';
+  const lb=+localStorage.getItem('bv2_lastbackup')||0;
+  const sb=$('#setBackup');
+  if(lb){
+    const d=new Date(lb);
+    sb.textContent=`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    sb.classList.remove('never');
+  }else{
+    sb.textContent='Nunca';
+    sb.classList.add('never');
+  }
+  $('#sMsg').textContent='';bMsg.textContent='';bProg.hidden=true;
+  openModal('settingsModal');
+}
+$('#btnSettings').addEventListener('click',openSettings);
+
+async function exportBackup(){
+  bMsg.className='set-msg';bMsg.textContent='';
+  bExport.disabled=true;bImport.disabled=true;showProg();
+  try{
+    await sleep(30);setProg(8);
+    const payload={v:3,ts:Date.now(),auth:auth,notes:notes};
+    const bytes=te.encode(JSON.stringify(payload));setProg(18);await sleep(0);
+    const CH=0x8000;let bin='';
+    const total=Math.max(1,Math.ceil(bytes.length/CH));
+    for(let i=0;i<total;i++){
+      bin+=String.fromCharCode.apply(null,bytes.subarray(i*CH,(i+1)*CH));
+      if(i%3===0){setProg(18+Math.round(62*i/total));await sleep(0);}
+    }
+    const b64=btoa(bin);setProg(86);await sleep(0);
+    const blob=new Blob([b64],{type:'text/plain'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    const d=new Date();
+    a.download=`basemask-${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}.txt`;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+    localStorage.setItem('bv2_lastbackup',String(Date.now()));
+    setProg(100);hideProgLater();
+    bMsg.className='set-msg ok';bMsg.textContent=`✓ Exportadas ${notes.length} notas (${(b64.length/1024).toFixed(1)} KB)`;
+    toast('⬇ Backup exportado');
+  }catch(e){
+    setProg(100);hideProgLater();
+    bMsg.className='set-msg err';bMsg.textContent='⛔ Error al exportar.';
+  }
+  bExport.disabled=false;bImport.disabled=false;
+}
+async function b64ToBytesProgressive(clean,onProg){
+  const CH=1024*96;
+  const parts=[];
+  const total=Math.max(1,Math.ceil(clean.length/CH));
+  for(let i=0;i<total;i++){
+    parts.push(atob(clean.slice(i*CH,(i+1)*CH)));
+    if(i%3===0){onProg(15+Math.round(45*i/total));await sleep(0);}
+  }
+  let len=0;for(const p of parts)len+=p.length;
+  const u8=new Uint8Array(len);let off=0;
+  for(const p of parts){for(let i=0;i<p.length;i++)u8[off++]=p.charCodeAt(i);}
+  return u8;
+}
+async function importBackup(file){
+  bMsg.className='set-msg';bMsg.textContent='';
+  bExport.disabled=true;bImport.disabled=true;showProg();
+  try{
+    setProg(6);await sleep(0);
+    const text=await file.text();
+    const clean=text.replace(/\s+/g,'');
+    if(!clean||clean.length%4!==0)throw new Error('b64');
+    const bytes=await b64ToBytesProgressive(clean,p=>setProg(p));
+    setProg(66);await sleep(0);
+    const data=JSON.parse(td.decode(bytes));
+    setProg(78);await sleep(0);
+    if(!data||data.v!==3||!data.auth||!data.auth.sa||!data.auth.sk||!data.auth.ah||!Array.isArray(data.notes))throw new Error('formato');
+    setProg(88);
+    if(!confirm(`El backup reemplazará tu bóveda actual.\nNotas ahora: ${notes.length} → backup: ${data.notes.length}.\n¿Continuar?`)){
+      setProg(100);hideProgLater();bMsg.textContent='· cancelado ·';
+      bExport.disabled=false;bImport.disabled=false;return;
+    }
+    auth=data.auth;localStorage.setItem('bv2_auth',JSON.stringify(auth));
+    notes=data.notes;persist();
+    if(notes.length&&!tut){tut=true;localStorage.setItem('bv2_tut','1');}
+    aesKey=null;
+    setProg(100);hideProgLater();
+    bMsg.className='set-msg ok';bMsg.textContent=`✓ Importadas ${notes.length} notas.`;
+    closeModal('settingsModal');
+    document.body.dataset.screen='calc';
+    applyMode();renderVault();resetCalc();setExpr('backup importado · introduce tu clave');
+    toast('⬆ Backup importado · desbloquea con tu clave');
+  }catch(e){
+    setProg(100);hideProgLater();
+    bMsg.className='set-msg err';bMsg.textContent='⛔ Archivo no válido o dañado.';
+  }
+  bExport.disabled=false;bImport.disabled=false;
+}
+bExport.addEventListener('click',exportBackup);
+bImport.addEventListener('click',()=>bFile.click());
+bFile.addEventListener('change',e=>{
+  const f=e.target.files[0];e.target.value='';
+  if(f)importBackup(f);
+});
+
+/* ---------- cambiar clave ---------- */
+$('#sRotate').addEventListener('click',async()=>{
+  const msg=$('#sMsg'),btn=$('#sRotate');
+  const c=$('#sCur').value.trim(),n1=$('#sNew').value.trim(),n2=$('#sNew2').value.trim();
+  msg.className='set-msg';msg.textContent='';
+  if(!/^\d{4,12}$/.test(c)||!/^\d{4,12}$/.test(n1)){msg.className='set-msg err';msg.textContent='⚠️ 4-12 dígitos';return;}
+  if(n1!==n2){msg.className='set-msg err';msg.textContent='⚠️ No coinciden';return;}
+  if(n1===c){msg.className='set-msg err';msg.textContent='⚠️ Igual a la actual';return;}
+  btn.disabled=true;btn.textContent='Verificando…';
+  let ok=false;try{ok=await verifyPin(c);}catch(e){}
+  if(!ok){msg.className='set-msg err';msg.textContent='✗ Actual incorrecta';btn.disabled=false;btn.textContent='🔁 Cambiar y recifrar';return;}
+  try{
+    const oldKey=await aesKeyFromPin(c,fromHex(auth.sk));btn.textContent='Descifrando…';
+    const payloads=[];
+    for(const n of notes){const r=await decodeWithKey(n.code,oldKey);if(!r)throw 0;payloads.push(r.p);}
+    btn.textContent='Recifrando…';
+    const sa=crypto.getRandomValues(new Uint8Array(16)),sk=crypto.getRandomValues(new Uint8Array(16));
+    const ah=toHex(await pbkdf2Bits(n1,sa)),newKey=await aesKeyFromPin(n1,sk);
+    for(let i=0;i<notes.length;i++)notes[i].code=await encryptCode(payloads[i],newKey);
+    auth={sa:toHex(sa),sk:toHex(sk),ah,rc:auth.rc,rcs:auth.rcs};
+    localStorage.setItem('bv2_auth',JSON.stringify(auth));persist();aesKey=newKey;
+    msg.className='set-msg ok';msg.textContent='✓ Cambiada y recifrada';
+    $('#sCur').value='';$('#sNew').value='';$('#sNew2').value='';
+    renderVault();toast('🔁 Clave cambiada');
+  }catch(e){msg.className='set-msg err';msg.textContent='⛔ Error';}
+  btn.disabled=false;btn.textContent='🔁 Cambiar y recifrar';
+});
+function resetAll(){if(confirm('¿Borrar TODO? (Irrecuperable)')&&confirm('¿Seguro?')){['bv2_auth','bv2_notes','bv2_tut','bv2_dec','bv2_holdhint','bv2_rattempts','bv2_rlock','bv2_rcskip','bv2_lastbackup'].forEach(k=>localStorage.removeItem(k));location.reload();}}
+$('#sReset').addEventListener('click',resetAll);
+$('#btnHelp').addEventListener('click',()=>openModal('helpModal'));
+$('#resetApp').addEventListener('click',resetAll);
+
+/* sin toast de Firebase al iniciar */
+window.addEventListener('firebase-ready',()=>{window.fbReady=true;});
+window.addEventListener('firebase-offline',()=>{window.fbReady=false;});
+
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    const o=document.querySelector('.modal.open');
+    if(o){o.classList.remove('open');if(o.id==='rescueModal')stopLockCountdown();}
+    return;
+  }
+  if(anyModalOpen()||document.body.dataset.screen!=='calc')return;
+  const map={'*':'×','/':'÷','-':'−','+':'+','Enter':'=','=':'=','Backspace':'del','%':'%','.':'.',',':'.'};
+  let k=null;if(/^[0-9]$/.test(e.key))k=e.key;else if(map[e.key]!==undefined)k=map[e.key];
+  if(k===null)return;e.preventDefault();applyKey(k);
+  const b=document.querySelector('[data-key="'+k+'"]');if(b){b.classList.add('pressed');setTimeout(()=>b.classList.remove('pressed'),120);}
+});
+
+applyMode();
+renderCalc();
+renderVault();
+})();
+</script>
+
+<!-- ══════════ FIREBASE: módulo aislado, nunca rompe la app ══════════ -->
+<script type="module">
+const FB_VERSION="10.14.1";
+try{
+  const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-app.js`);
+  const analyticsMod = await import(`https://www.gstatic.com/firebasejs/${FB_VERSION}/firebase-analytics.js`).catch(()=>null);
+  const firebaseConfig = {
+    apiKey: "AIzaSyDURjDu2ISZUh6rPJQBQJcaKb32MsvlJA8",
+    authDomain: "basemask.firebaseapp.com",
+    projectId: "basemask",
+    storageBucket: "basemask.firebasestorage.app",
+    messagingSenderId: "210037467849",
+    appId: "1:210037467849:web:c12eae5b2547269b2abb18",
+    measurementId: "G-4LGKZ76X68"
+  };
+  const app = initializeApp(firebaseConfig);
+  window.fbApp = app;
+  if(analyticsMod){
+    try{ if(await analyticsMod.isSupported()){ window.fbAnalytics = analyticsMod.getAnalytics(app); } }
+    catch(e){ console.warn('[Firebase] Analytics no disponible:', e); }
+  }
+  window.dispatchEvent(new Event('firebase-ready'));
+}catch(err){
+  window.dispatchEvent(new Event('firebase-offline'));
+  console.warn('[Firebase] No disponible. Modo local activo.', err);
+}
+</script>
+</body>
+</html>
